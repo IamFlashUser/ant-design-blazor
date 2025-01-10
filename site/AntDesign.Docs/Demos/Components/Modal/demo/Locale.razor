@@ -1,21 +1,19 @@
 ﻿@inject ModalService _modalService
 
 <div>
-    <Button Type="primary" OnClick="@ShowModal">
+    <Button Type="ButtonType.Primary" OnClick="ShowModal">
         Modal
     </Button>
     <Modal Title="@("Modal")"
-           Visible="@_visible"
-           OnOk="@HideModal"
-           OnCancel="@HideModal"
-           OkText="@("确认")"
-           CancelText="@("取消")">
+           @bind-Visible="@_visible"
+           OkText="@("Agree")"
+           CancelText="@("Dismiss")">
         <p>Bla bla ...</p>
         <p>Bla bla ...</p>
         <p>Bla bla ...</p>
     </Modal>
 
-    <Button OnClick="@HandleConfirm">Confirm</Button>
+    <Button OnClick="HandleConfirm">Confirm</Button>
 
 </div>
 
@@ -27,20 +25,15 @@
         _visible = true;
     }
 
-    private void HideModal()
-    {
-        _visible = false;
-    }
-
     private void HandleConfirm()
     {
         _modalService.Confirm(new ConfirmOptions()
         {
             Title = "Confirm",
-            Icon =@<Icon Type="exclamation-circle" Theme="Outline"></Icon>,
+            Icon = @<Icon Type="@IconType.Outline.ExclamationCircle" />,
             Content = "Bla bla ...",
-            OkText = "确认",
-            CancelText = "取消"
+            OkText = "Agree",
+            CancelText = "Dismiss"
         });
     }
 }

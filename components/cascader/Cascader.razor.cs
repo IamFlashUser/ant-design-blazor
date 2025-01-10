@@ -1,47 +1,124 @@
-﻿using System;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Components;
 using System.Linq;
 using System.Threading.Tasks;
+using AntDesign.JsInterop;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
-using AntDesign.JsInterop;
 
 namespace AntDesign
 {
+    /**
+    <summary>
+        <para>Cascade selection box.</para>
+
+        <h2>When To Use</h2>
+
+        <list type="bullet">
+            <item>When you need to select from a set of associated data set. Such as province/city/district, company level, things classification.</item>
+            <item>When selecting from a large data set, with multi-stage classification separated for easy selection.</item>
+            <item>Chooses cascade items in one float layer for better user experience.</item>
+        </list>
+    </summary>
+    <seealso cref="CascaderNode"/>
+    <seealso cref="TriggerBoundaryAdjustMode"/>
+    */
+    [Documentation(DocumentationCategory.Components, DocumentationType.DataEntry, "https://gw.alipayobjects.com/zos/alicdn/UdS8y8xyZ/Cascader.svg", Title = "Cascader", SubTitle = "级联选择")]
     public partial class Cascader : AntInputComponentBase<string>
     {
-        [Parameter] public bool AllowClear { get; set; } = true;
+        /// <summary>
+        /// Whether to allow clearing or not
+        /// </summary>
+        /// <summary xml:lang="zh-CN">
+        /// 是否允许清算
+        /// </summary>
+        /// <default value="true" />
+        [Parameter]
+        public bool AllowClear { get; set; } = true;
 
         /// <summary>
         /// Overlay adjustment strategy (when for example browser resize is happening)
         /// </summary>
-        [Parameter] public TriggerBoundaryAdjustMode BoundaryAdjustMode { get; set; } = TriggerBoundaryAdjustMode.InView;
-
-        [Parameter] public bool ChangeOnSelect { get; set; }
-
-        [Parameter] public string DefaultValue { get; set; }
-
-        [Parameter] public string ExpandTrigger { get; set; }
-
-        [Parameter] public string NotFoundContent { get; set; } = LocaleProvider.CurrentLocale.Empty.Description;
-
-        [Parameter] public string Placeholder { get => _placeHolder; set => _placeHolder = value; }
-
-        [Parameter] public string PopupContainerSelector { get; set; } = "body";
-
-        [Parameter] public bool ShowSearch { get; set; }
-
-        [Parameter] public bool Disabled { get; set; }
+        [Parameter]
+        public TriggerBoundaryAdjustMode BoundaryAdjustMode { get; set; } = TriggerBoundaryAdjustMode.InView;
 
         /// <summary>
-        /// Please use SelectedNodesChanged instead.
+        /// Change value on each selection if set to true, only chage on final selection if false.
+        /// </summary>
+        [Parameter]
+        public bool ChangeOnSelect { get; set; }
+
+        /// <summary>
+        /// Initially selected value
+        /// </summary>
+        [Parameter]
+        public string DefaultValue { get; set; }
+
+        /// <summary>
+        /// When to expand the current item - click or hover
+        /// </summary>
+        /// <default value="click" />
+        [Parameter]
+        public string ExpandTrigger { get; set; }
+
+        /// <summary>
+        /// Empty description for when not found
+        /// </summary>
+        /// <default value="No Data (in current locale)" />
+        [Parameter]
+        public string NotFoundContent { get; set; } = LocaleProvider.CurrentLocale.Empty.Description;
+
+        /// <summary>
+        /// Placeholder for input
+        /// </summary>
+        /// <default value="Please select (in current locacle)" />
+        [Parameter]
+        public string Placeholder
+        {
+            get => _placeHolder;
+            set => _placeHolder = value;
+        }
+
+        /// <summary>
+        /// Element to show popup container in
+        /// </summary>
+        /// <deault value="body"/>
+        [Parameter]
+        public string PopupContainerSelector { get; set; } = "body";
+
+        /// <summary>
+        /// Allow searching or not
+        /// </summary>
+        [Parameter]
+        public bool ShowSearch { get; set; }
+
+        /// <summary>
+        /// Disable input or not
+        /// </summary>
+        [Parameter]
+        public bool Disabled { get; set; }
+
+        /// <summary>
+        /// Callback executed when the selected value changes
         /// </summary>
         [Obsolete("Instead use SelectedNodesChanged.")]
-        [Parameter] public Action<List<CascaderNode>, string, string> OnChange { get; set; }
+        [Parameter]
+        public Action<List<CascaderNode>, string, string> OnChange { get; set; }
 
-        [Parameter] public EventCallback<CascaderNode[]> SelectedNodesChanged { get; set; }
+        /// <summary>
+        /// Callback executed when the selected value changes
+        /// </summary>
+        [Parameter]
+        public EventCallback<CascaderNode[]> SelectedNodesChanged { get; set; }
 
+        /// <summary>
+        /// Options for the overlay
+        /// </summary>
         [Parameter]
         public IEnumerable<CascaderNode> Options
         {
@@ -62,17 +139,24 @@ namespace AntDesign
             }
         }
 
+        /// <summary>
+        /// Placement of the overlay. Defaults to <see cref="Placement.BottomLeft"/>.
+        /// </summary>
+        /// <default value="Placement.BottomLeft" />
+        [Parameter]
+        public Placement Placement { get; set; } = Placement.BottomLeft;
+
         private List<CascaderNode> _nodelist = new List<CascaderNode>();
         private List<CascaderNode> _selectedNodes = new List<CascaderNode>();
         private List<CascaderNode> _hoverSelectedNodes = new List<CascaderNode>();
         private List<CascaderNode> _renderNodes = new List<CascaderNode>();
-        private List<CascaderNode> _searchList = new List<CascaderNode>();
+        private readonly List<CascaderNode> _searchList = new List<CascaderNode>();
         private IEnumerable<CascaderNode> _matchList;
 
-        private ClassMapper _menuClassMapper = new ClassMapper();
-        private ClassMapper _inputClassMapper = new ClassMapper();
+        private readonly ClassMapper _menuClassMapper = new ClassMapper();
+        private readonly ClassMapper _inputClassMapper = new ClassMapper();
 
-        private EventCallbackFactory _callbackFactory = new EventCallbackFactory();
+        private readonly EventCallbackFactory _callbackFactory = new EventCallbackFactory();
 
         private bool _dropdownOpened;
         private bool _isOnCascader;
@@ -88,10 +172,10 @@ namespace AntDesign
         private bool _focused;
         private string _menuStyle;
 
-        private static Dictionary<string, string> _sizeMap = new Dictionary<string, string>()
+        private static Dictionary<InputSize, string> _sizeMap = new Dictionary<InputSize, string>()
         {
-            ["large"] = "lg",
-            ["small"] = "sm"
+            [InputSize.Large] = "lg",
+            [InputSize.Small] = "sm"
         };
 
         protected override void OnInitialized()
@@ -108,8 +192,8 @@ namespace AntDesign
                 .If("ant-select-focused", () => _focused)
                 .If($"{prefixCls}-picker-show-search ant-select-show-search", () => ShowSearch)
                 .If($"{prefixCls}-picker-with-value", () => !string.IsNullOrEmpty(_searchValue))
-                .If($"ant-select-lg", () => Size == "large")
-                .If($"ant-select-sm", () => Size == "small")
+                .If($"ant-select-lg", () => Size == InputSize.Large)
+                .If($"ant-select-sm", () => Size == InputSize.Small)
                 .If($"ant-select-disabled", () => Disabled)
                 .If("ant-select-allow-clear ", () => AllowClear)
                 .If($"{selectCls}-in-form-item ", () => FormItem != null)
@@ -133,7 +217,6 @@ namespace AntDesign
         protected override void OnValueChange(string value)
         {
             base.OnValueChange(value);
-            RefreshNodeValue(value);
             RefreshDisplayText();
         }
 
@@ -271,8 +354,17 @@ namespace AntDesign
             _selectedType = selectedType;
             if (selectedType == SelectedTypeEnum.Click)
             {
-                _selectedNodes.Clear();
-                SetSelectedNodeWithParent(cascaderNode, ref _selectedNodes);
+                var index = _selectedNodes.FindIndex(x => x.Value == cascaderNode.Value);
+                if (index != -1)
+                {
+                    _selectedNodes.RemoveRange(index, _selectedNodes.Count - index);
+                }
+                else
+                {
+                    _selectedNodes.RemoveAll(x => x.Level >= cascaderNode.Level);
+                    _selectedNodes.Add(cascaderNode);
+                }
+
                 _renderNodes = _selectedNodes;
 
                 if (ChangeOnSelect || !cascaderNode.HasChildren)
@@ -282,8 +374,18 @@ namespace AntDesign
             }
             else
             {
-                _hoverSelectedNodes.Clear();
-                SetSelectedNodeWithParent(cascaderNode, ref _hoverSelectedNodes);
+                var index = _hoverSelectedNodes.FindIndex(x => x.Value == cascaderNode.Value);
+
+                if (index != -1)
+                {
+                    _hoverSelectedNodes.RemoveRange(index, _hoverSelectedNodes.Count - index);
+                }
+                else
+                {
+                    _hoverSelectedNodes.RemoveAll(x => x.Level >= cascaderNode.Level);
+                    _hoverSelectedNodes.Add(cascaderNode);
+                }
+
                 _renderNodes = _hoverSelectedNodes;
             }
             _renderNodes.Sort((x, y) => x.Level.CompareTo(y.Level));  //Level 升序排序
@@ -323,6 +425,7 @@ namespace AntDesign
         /// <param name="list"></param>
         /// <param name="parentNode"></param>
         /// <param name="level"></param>
+        /// <param name="recursive"></param>
         private void InitCascaderNodeState(List<CascaderNode> list, CascaderNode parentNode, int level, bool recursive = false)
         {
             if (list == null) return;

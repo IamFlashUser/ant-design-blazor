@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System;
 using System.Globalization;
 
 namespace AntDesign
@@ -164,10 +168,10 @@ namespace AntDesign
             var daysInMonth = DateTime.DaysInMonth(yearValue, monthValue);
             dayValue = dayValue > daysInMonth ? daysInMonth : dayValue;
 
-            return new DateTime(yearValue, monthValue, dayValue, hour ?? date.Hour, minute ?? date.Minute, second ?? date.Second);
+            return new DateTime(yearValue, monthValue, dayValue, hour ?? date.Hour, minute ?? date.Minute, second ?? date.Second, date.Kind);
         }
 
-        public static DateTime? FormatDateByPicker(DateTime? dateTime, string picker)
+        public static DateTime? FormatDateByPicker(DateTime? dateTime, DatePickerType picker)
         {
             if (dateTime == null)
             {
@@ -177,7 +181,7 @@ namespace AntDesign
             return FormatDateByPicker((DateTime)dateTime, picker);
         }
 
-        public static DateTime FormatDateByPicker(DateTime dateTime, string picker)
+        public static DateTime FormatDateByPicker(DateTime dateTime, DatePickerType picker)
         {
             switch (picker)
             {
@@ -277,6 +281,32 @@ namespace AntDesign
             var num1 = Math.Floor(date.Value.Year / 10d);
             var num2 = Math.Floor(compareDate.Value.Year / 10d);
             return num1 == num2;
+        }
+
+        public static DateTime GetPreviousStartDateOfPeriod(DateTime dateTime, DatePickerType picker)
+        {
+            return picker switch
+            {
+                DatePickerType.Date => AddDaysSafely(dateTime, -1),
+                DatePickerType.Year => AddYearsSafely(dateTime, -1),
+                DatePickerType.Month => AddMonthsSafely(dateTime, -1),
+                DatePickerType.Quarter => AddMonthsSafely(dateTime, -3),
+                DatePickerType.Decade => AddYearsSafely(dateTime, -10),
+                _ => dateTime,
+            };
+        }
+
+        public static DateTime GetNextStartDateOfPeriod(DateTime dateTime, DatePickerType picker)
+        {
+            return picker switch
+            {
+                DatePickerType.Date => AddDaysSafely(dateTime, 1),
+                DatePickerType.Year => AddYearsSafely(dateTime, 1),
+                DatePickerType.Month => AddMonthsSafely(dateTime, 1),
+                DatePickerType.Quarter => AddMonthsSafely(dateTime, 3),
+                DatePickerType.Decade => AddYearsSafely(dateTime, 10),
+                _ => dateTime,
+            };
         }
     }
 }

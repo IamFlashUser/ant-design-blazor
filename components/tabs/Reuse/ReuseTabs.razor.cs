@@ -1,30 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 
 namespace AntDesign
 {
-    public partial class ReuseTabs : AntDomComponentBase
+    /// <summary>
+    /// Reuse of multiple page components within an application
+    /// </summary>
+    public partial class ReuseTabs : Tabs
     {
+        /// <summary>
+        /// Class name of the inner tab pane.
+        /// </summary>
         [Parameter]
         public string TabPaneClass { get; set; }
 
+        /// <summary>
+        /// Templates for customizing page content.
+        /// </summary>
         [Parameter]
-        public bool Draggable { get; set; }
+        public RenderFragment<ReuseTabsPageItem> TabPaneTemplate { get; set; } = context => context.Body;
 
+        /// <summary>
+        /// The content of the tab.
+        /// </summary>
         [Parameter]
-        public TabSize Size { get; set; }
+        public RenderFragment Body { get; set; }
 
-        [Parameter]
-        public RenderFragment<ReuseTabsPageItem> Body { get; set; } = context => context.Body;
-
+        /// <summary>
+        /// Localization Settings.
+        /// </summary>
         [Parameter]
         public ReuseTabsLocale Locale { get; set; } = LocaleProvider.CurrentLocale.ReuseTabs;
+
+        /// <summary>
+        /// Whether to hide the page display and keep only the title tab. Then you can use <see cref="ReusePages" /> to show the page conent.
+        /// </summary>
+        [Parameter]
+        public bool HidePages { get; set; }
+
+        /// <summary>
+        /// The routing information for the current page, which is a serializable version of <see cref="Microsoft.AspNetCore.Components.RouteData"/>.
+        /// </summary>
+        [Parameter]
+        public ReuseTabsRouteData ReuseTabsRouteData { get; set; }
 
         [CascadingParameter]
         private RouteData RouteData { get; set; }
@@ -35,217 +57,99 @@ namespace AntDesign
         [Inject]
         private ReuseTabsService ReuseTabsService { get; set; }
 
-        private readonly Dictionary<string, ReuseTabsPageItem> _pageMap = new();
+        [CascadingParameter(Name = "AntDesign.InReusePageContent")]
+        private bool InReusePageContent { get; set; }
 
-        private string CurrentUrl
-        {
-            get => "/" + Navmgr.ToBaseRelativePath(Navmgr.Uri);
-            set => Navmgr.NavigateTo(value.StartsWith("/") ? value[1..] : value);
-        }
-
-        private ReuseTabsPageItem[] Pages => _pageMap.Values.Where(x => !x.Ignore).OrderBy(x => x.CreatedAt).ToArray();
-
+        /// <summary>
+        /// cover the base ChildContent
+        /// </summary>
+        private new RenderFragment ChildContent { get; set; }
         public ReuseTabs()
         {
-            this.ScanReuseTabsPageAttribute();
+            Type = TabType.EditableCard;
+            HideAdd = true;
         }
 
         protected override void OnInitialized()
         {
-            ReuseTabsService.OnClosePage += RemovePage;
-            ReuseTabsService.OnCloseOther += RemoveOther;
-            ReuseTabsService.OnCloseAll += RemoveAll;
-            ReuseTabsService.OnCloseCurrent += RemoveCurrent;
-            ReuseTabsService.OnUpdate += UpdateState;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            ReuseTabsService.OnClosePage -= RemovePage;
-            ReuseTabsService.OnCloseOther -= RemoveOther;
-            ReuseTabsService.OnCloseAll -= RemoveAll;
-            ReuseTabsService.OnCloseCurrent -= RemoveCurrent;
-            ReuseTabsService.OnUpdate -= UpdateState;
-
-            base.Dispose(disposing);
-        }
-
-        public override Task SetParametersAsync(ParameterView parameters)
-        {
-            if (parameters.TryGetValue(nameof(RouteData), out RouteData routeData))
-            {
-                var reuseTabsPageItem = _pageMap.ContainsKey(CurrentUrl) ? _pageMap[CurrentUrl] : null;
-                if (reuseTabsPageItem == null)
-                {
-                    reuseTabsPageItem = new ReuseTabsPageItem
-                    {
-                        Url = CurrentUrl,
-                        CreatedAt = DateTime.Now,
-                        Ignore = false
-                    };
-
-                    _pageMap[CurrentUrl] = reuseTabsPageItem;
-                }
-
-                reuseTabsPageItem.Body ??= CreateBody(routeData, reuseTabsPageItem);
-            }
-
-            return base.SetParametersAsync(parameters);
-        }
-
-        private static RenderFragment CreateBody(RouteData routeData, ReuseTabsPageItem item)
-        {
-            return builder =>
-            {
-                builder.OpenComponent(0, routeData.PageType);
-                foreach (var routeValue in routeData.RouteValues)
-                {
-                    builder.AddAttribute(1, routeValue.Key, routeValue.Value);
-                }
-
-                builder.AddComponentReferenceCapture(2, @ref =>
-                {
-                    GetPageInfo(item, routeData.PageType, item.Url, @ref);
-                });
-
-                builder.CloseComponent();
-            };
-        }
-
-        private static void GetPageInfo(ReuseTabsPageItem pageItem, Type pageType, string url, object page)
-        {
-            if (page is IReuseTabsPage resuse)
-            {
-                pageItem.Title = resuse.GetPageTitle();
-            }
-
-            var attributes = pageType.GetCustomAttributes(true);
-
-            if (attributes.FirstOrDefault(x => x is ReuseTabsPageTitleAttribute) is ReuseTabsPageTitleAttribute titleAttr && titleAttr != null)
-            {
-                pageItem.Title ??= titleAttr.Title?.ToRenderFragment();
-            }
-
-            if (attributes.FirstOrDefault(x => x is ReuseTabsPageAttribute) is ReuseTabsPageAttribute attr && attr != null)
-            {
-                pageItem.Title ??= attr.Title?.ToRenderFragment();
-                pageItem.Ignore = attr.Ignore;
-                pageItem.Closable = attr.Closable;
-                pageItem.Pin = attr.Pin;
-            }
-
-            pageItem.Title ??= url.ToRenderFragment();
-        }
-
-        /// <summary>
-        /// 获取所有程序集
-        /// </summary>
-        /// <returns></returns>
-        protected IEnumerable<Assembly> GetAllAssembly()
-        {
-            IEnumerable<Assembly> assemblies = new List<Assembly>();
-            var entryAssembly = Assembly.GetEntryAssembly();
-            if (entryAssembly == null) return assemblies;
-            var referencedAssemblies = entryAssembly.GetReferencedAssemblies().Select(Assembly.Load);
-            assemblies = new List<Assembly> { entryAssembly }.Union(referencedAssemblies);
-
-            var paths = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory)
-                .Where(w => w.EndsWith(".dll") && !w.Contains(nameof(Microsoft)))
-                .Select(w => w)
-             ;
-
-            return assemblies;
-        }
-
-        /// <summary>
-        /// 扫描 ReuseTabsPageAttribute 特性
-        /// </summary>
-        private void ScanReuseTabsPageAttribute()
-        {
-            var list = GetAllAssembly();
-
-            foreach (var item in list)
-            {
-                var allClass = item.ExportedTypes
-                    .Where(w => w.GetCustomAttribute<ReuseTabsPageAttribute>()?.Pin == true);
-                foreach (var pageType in allClass)
-                {
-                    var routeAttribute = pageType.GetCustomAttribute<RouteAttribute>();
-                    var reuseTabsPageAttribute = pageType.GetCustomAttribute<ReuseTabsPageAttribute>();
-
-                    this.AddReuseTabsPageItem(routeAttribute.Template, pageType);
-                }
-            }
-        }
-
-        public void AddReuseTabsPageItem(string url, Type pageType)
-        {
-            if (_pageMap.ContainsKey(url)) return;
-
-            var reuseTabsPageItem = new ReuseTabsPageItem();
-            GetPageInfo(reuseTabsPageItem, pageType, url, Activator.CreateInstance(pageType));
-            reuseTabsPageItem.CreatedAt = DateTime.Now;
-            reuseTabsPageItem.Url = url;
-            _pageMap[url] = reuseTabsPageItem;
-        }
-
-        private void RemovePage(string key)
-        {
-            var reuseTabsPageItem = Pages.FirstOrDefault(w => w.Url == key);
-            if (reuseTabsPageItem?.Pin == true)
+            if (InReusePageContent)
             {
                 return;
             }
 
-            RemovePageBase(key);
-            StateHasChanged();
+            base.OnInitialized();
+
+            Navmgr.LocationChanged += OnLocationChanged;
+
+            ReuseTabsService.Init(true);
+            ReuseTabsService.OnStateHasChanged += OnStateHasChanged;
+
+            LoadPage();
+
+            base.ChildContent = RenderPanes;
+
+            ActiveKey = ReuseTabsService.ActiveKey;
         }
 
-        private void RemoveOther(string key)
+        private void LoadPage()
         {
-            foreach (var item in Pages.Where(x => x.Closable && x.Url != key && !x.Pin))
+            RouteData ??= ReuseTabsRouteData?.RouteData;
+            ReuseTabsService.TrySetRouteData(RouteData, true);
+        }
+
+        protected override bool ShouldRender() => !InReusePageContent && base.ShouldRender();
+
+        protected override void OnAfterRender(bool firstRender)
+        {
+            base.OnAfterRender(firstRender);
+
+            // reload current page after ReloadPage() was called by ReuseTabsService
+            if (ReuseTabsService.CurrentPage.Rendered == false)
             {
-                RemovePageBase(item.Url);
-            }
-            StateHasChanged();
-        }
-
-        private void RemoveAll()
-        {
-            foreach (var item in Pages.Where(x => x.Closable && !x.Pin))
-            {
-                RemovePageBase(item.Url);
-            }
-            StateHasChanged();
-        }
-
-        private void RemoveCurrent()
-        {
-            RemovePage(this.CurrentUrl);
-        }
-
-        private void UpdateState()
-        {
-            StateHasChanged();
-        }
-
-
-
-        public void RemovePageBase(string key)
-        {
-            _pageMap.Remove(key);
-        }
-
-        public void RemovePageWithRegex(string pattern)
-        {
-            foreach (var key in _pageMap.Keys)
-            {
-                if (Regex.IsMatch(key, pattern))
-                {
-                    _pageMap.Remove(key);
-                }
+                LoadPage();
+                StateHasChanged(); // update title need calling render again
             }
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            ReuseTabsService.OnStateHasChanged -= OnStateHasChanged;
+            Navmgr.LocationChanged -= OnLocationChanged;
+            base.Dispose(disposing);
+        }
+
+        private void ClosePage(string key)
+        {
+            UpdateTabsPosition();
+            ReuseTabsService.ClosePageByKey(key);
+        }
+
+        protected override void OnRemoveTab(TabPane tab)
+        {
+            ReuseTabsService.ClosePageByKey(tab.Key);
+        }
+
+        protected override void OnActiveTabChanged(TabPane tab)
+        {
+            if (tab.Key != ReuseTabsService.ActiveKey)
+            {
+                ReuseTabsService.ActiveKey = tab.Key;
+            }
+        }
+
+        private void OnLocationChanged(object o, LocationChangedEventArgs _)
+        {
+            UpdateTabsPosition();
+
+            LoadPage();
+
+            ActivatePane(ReuseTabsService.ActiveKey);
+        }
+
+        private void OnStateHasChanged()
+        {
+            SetShowRender();
+            StateHasChanged();
+        }
     }
 }

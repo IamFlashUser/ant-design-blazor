@@ -6,13 +6,11 @@
 
 <Space>
     <SpaceItem>
-        <Button Type="primary" OnClick="@(()=>{ _visible = true; })">
+        <Button Type="ButtonType.Primary" OnClick="@(()=>{ _visible = true; })">
             Open Modal
         </Button>
         <Modal Title="@_title"
-               Visible="@_visible"
-               OnOk="@HandleOk"
-               OnCancel="@HandleCancel"
+               @bind-Visible="@_visible"
                OkText="@_okText"
                CancelText="@_cancelText"
                >
@@ -26,17 +24,17 @@
 <Divider>ModalService</Divider>
 <Space>
     <SpaceItem>
-        <Button OnClick="OpenModal" Type="primary">Open a Modal</Button>
+        <Button OnClick="OpenModal" Type="ButtonType.Primary">Open a Modal</Button>
     </SpaceItem>
     <SpaceItem>
-        <Button OnClick="OpenConfirm" Type="primary">Open a Confirm</Button>
+        <Button OnClick="OpenConfirm" Type="ButtonType.Primary">Open a Confirm</Button>
     </SpaceItem>
 </Space>
 
 <Divider>ConfirmService</Divider>
 <Space>
     <SpaceItem>
-        <Button OnClick="OpenConfirmByConfirmService" Type="primary">Open a Modal</Button>
+        <Button OnClick="OpenConfirmByConfirmService" Type="ButtonType.Primary">Open a Modal</Button>
     </SpaceItem>
 </Space>
 
@@ -47,17 +45,6 @@
     string _title = "Override Locale";
     bool _visible = false;
 
-    private void HandleOk(MouseEventArgs e)
-    {
-        Console.WriteLine(e);
-        _visible = false;
-    }
-
-    private void HandleCancel(MouseEventArgs e)
-    {
-        Console.WriteLine(e);
-        _visible = false;
-    }
 
     private async Task OpenConfirm()
     {

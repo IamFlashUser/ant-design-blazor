@@ -2,9 +2,9 @@
 
 export class backtopHelper {
   static backTop(target: string) {
-    let dom = domInfoHelper.get(target);
+    const dom = domInfoHelper.get(target);
     if (dom) {
-      domManipulationHelper.slideTo(dom.scrollTop);
+      domManipulationHelper.slideTo(dom.scrollTop||0);
     } else {
       domManipulationHelper.slideTo(0);
     }

@@ -1,4 +1,4 @@
-﻿<Divider Orientation="left">Load all data</Divider>
+﻿<Divider Orientation="DividerOrientation.Left">Load all data</Divider>
 
 <Space>
     <SpaceItem>
@@ -18,7 +18,7 @@
     <PropertyColumn Property="c=>c.Address" />
 </Table>
 
-<Divider Orientation="left">Load on demand</Divider>
+<Divider Orientation="DividerOrientation.Left">Load on demand</Divider>
 
 <Table TItem="Data"
        DataSource="data2"
@@ -27,7 +27,8 @@
        OnChange="OnChange"
        Total="total"
        RemoteDataSource
-       Bordered>
+       Bordered
+       RowKey="x=>x.Name">
     <Selection />
     <PropertyColumn Property="c=>c.Name" Width="400" />
     <PropertyColumn Property="c=>c.Age" Width="150" />

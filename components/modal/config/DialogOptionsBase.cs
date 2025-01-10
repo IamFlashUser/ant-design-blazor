@@ -2,12 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+using AntDesign.Internal.ModalDialog;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using OneOf;
 
 namespace AntDesign
@@ -26,16 +22,18 @@ namespace AntDesign
         {
             builder.OpenComponent<Icon>(0);
             builder.AddAttribute(1, "Type", "fullscreen");
-            builder.AddAttribute(2, "Theme", "outline");
+            builder.AddAttribute(2, "Theme", IconThemeType.Outline);
             builder.CloseComponent();
         };
+
         internal static readonly RenderFragment DefaultRestoreIcon = (builder) =>
         {
             builder.OpenComponent<Icon>(0);
             builder.AddAttribute(1, "Type", "fullscreen-exit");
-            builder.AddAttribute(2, "Theme", "outline");
+            builder.AddAttribute(2, "Theme", IconThemeType.Outline);
             builder.CloseComponent();
         };
+
         /// <summary>
         /// default Dialog close icon
         /// </summary>
@@ -43,7 +41,17 @@ namespace AntDesign
         {
             builder.OpenComponent<Icon>(0);
             builder.AddAttribute(1, "Type", "close");
-            builder.AddAttribute(2, "Theme", "outline");
+            builder.AddAttribute(2, "Theme", IconThemeType.Outline);
+            builder.CloseComponent();
+        };
+
+        /// <summary>
+        /// default modal header
+        /// </summary>
+
+        internal static readonly RenderFragment DefaultHeader = (builder) =>
+        {
+            builder.OpenComponent<ModalHeader>(0);
             builder.CloseComponent();
         };
 
@@ -56,10 +64,10 @@ namespace AntDesign
             builder.CloseComponent();
         };
 
-        #endregion
+        #endregion static and const
 
         /// <summary>
-        /// class name prefix 
+        /// class name prefix
         /// </summary>
         public string PrefixCls { get; set; } = "ant-modal";
 
@@ -84,7 +92,7 @@ namespace AntDesign
         public ElementReference? GetContainer { get; set; } = null;
 
         /// <summary>
-        /// Whether support press esc to close	
+        /// Whether support press esc to close
         /// </summary>
         public bool Keyboard { get; set; } = true;
 
@@ -99,7 +107,7 @@ namespace AntDesign
         public bool MaskClosable { get; set; }
 
         /// <summary>
-        /// Style for dialog's mask element	
+        /// Style for dialog's mask element
         /// </summary>
         public string MaskStyle { get; set; }
 
@@ -116,7 +124,7 @@ namespace AntDesign
         /// <summary>
         /// Button type of the OK button
         /// </summary>
-        public string OkType { get; set; } = ButtonType.Primary;
+        public ButtonType OkType { get; set; } = ButtonType.Primary;
 
         /// <summary>
         /// The modal dialog's title of String
@@ -142,5 +150,7 @@ namespace AntDesign
         /// Is RTL
         /// </summary>
         public bool Rtl { get; set; } = false;
+
+        internal bool CreateByService { get; set; }
     }
 }

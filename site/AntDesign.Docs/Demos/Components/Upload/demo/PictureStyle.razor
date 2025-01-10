@@ -1,27 +1,34 @@
 @inject IMessageService _message
 
 <Upload @attributes="attrs"
-         OnSingleCompleted="OnSingleCompleted"
-         OnRemove="HandleRemove">
+        ShowUploadList=true
+        ShowPreviewIcon=true
+        ShowRemoveIcon=false
+        OnSingleCompleted="OnSingleCompleted"
+        OnRemove="HandleRemove">
     <Button Icon="upload">
         <span>Upload</span>
     </Button>
 </Upload>
 <br />
 <br />
-<Upload @attributes="attrs1"
-         OnSingleCompleted="OnSingleCompleted"
-         OnRemove="HandleRemove">
+<Upload @attributes="attrs"
+        ShowUploadList=true
+        ShowPreviewIcon=true
+        ShowRemoveIcon=true
+        OnSingleCompleted="OnSingleCompleted"
+        OnRemove="HandleRemove">
     <Button Icon="upload">
         <span>Upload</span>
     </Button>
 </Upload>
+<br />
+<br />
 
 @code
 {
-
     static List<UploadFileItem> fileList = new List<UploadFileItem>
-{
+    {
         new UploadFileItem
         {
             Id = "1",
@@ -38,19 +45,19 @@
     };
 
     Dictionary<string, object> attrs = new Dictionary<string, object>
-{
+    {
         {"Action", "https://www.mocky.io/v2/5cc8019d300000980a055e76" },
         {"Name", "files" },
         {"DefaultFileList", fileList},
-        {"ListType", "picture" }
+        {"ListType", UploadListType.Picture }
     };
 
     Dictionary<string, object> attrs1 = new Dictionary<string, object>
-{
+    {
         {"Action", "https://www.mocky.io/v2/5cc8019d300000980a055e76" },
         {"Name", "files" },
         {"DefaultFileList", fileList},
-        {"ListType", "picture" },
+        {"ListType", UploadListType.Picture },
         {"Class", "upload-list-inline" }
     };
 

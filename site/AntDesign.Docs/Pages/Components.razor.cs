@@ -1,18 +1,25 @@
-﻿using System;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using AntDesign.Docs.Localization;
 using AntDesign.Docs.Services;
 using AntDesign.Docs.Shared;
+using AntDesign.Extensions.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.Extensions.Localization;
 
 namespace AntDesign.Docs.Pages
 {
     public partial class Components : ComponentBase, IDisposable
     {
+        [Parameter]
+        public string Locale { get; set; }
         [Parameter]
         public string Name { get; set; }
 
@@ -20,7 +27,10 @@ namespace AntDesign.Docs.Pages
         private DemoService DemoService { get; set; }
 
         [Inject]
-        private ILanguageService LanguageService { get; set; }
+        private ILocalizationService LocalizationService { get; set; }
+
+        [Inject]
+        private IStringLocalizer Localizer { get; set; }
 
         [Inject]
         private NavigationManager NavigationManager { get; set; }
@@ -34,7 +44,7 @@ namespace AntDesign.Docs.Pages
 
         private bool _expandAllCode;
 
-        private string CurrentLanguage => LanguageService.CurrentCulture.Name;
+        private string CurrentLanguage => LocalizationService.CurrentCulture.Name;
 
         private string _filePath;
 
@@ -46,10 +56,18 @@ namespace AntDesign.Docs.Pages
 
         private string EditUrl => $"https://github.com/ant-design-blazor/ant-design-blazor/edit/master/{_filePath}";
 
-        protected override void OnInitialized()
+        private List<DemoItem> _demos = [];
+
+        private (string Name, string Title)[] _anchors = [];
+
+        private string _currentPageName;
+        private string _currentLocale;
+
+        protected override async Task OnInitializedAsync()
         {
-            LanguageService.LanguageChanged += OnLanguageChanged;
+            LocalizationService.LanguageChanged += OnLanguageChanged;
             NavigationManager.LocationChanged += OnLocationChanged;
+            await HandleNavigate(onInitialize: true);
         }
 
         private void OnLanguageChanged(object sender, CultureInfo args)
@@ -67,12 +85,11 @@ namespace AntDesign.Docs.Pages
             InvokeAsync(StateHasChanged);
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected override void OnAfterRender(bool firstRender)
         {
             if (firstRender)
             {
                 _rendered = true;
-                await Task.Yield();
                 StateHasChanged();
                 return;
             }
@@ -82,11 +99,9 @@ namespace AntDesign.Docs.Pages
                 _changed = false;
                 _ = HandleNavigate();
             }
-
-            await base.OnAfterRenderAsync(firstRender);
         }
 
-        private async Task HandleNavigate()
+        private async Task HandleNavigate(bool onInitialize = false)
         {
             var fullPageName = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
             fullPageName = fullPageName.IndexOf('/') > 0 ? fullPageName.Substring(fullPageName.IndexOf('/') + 1) : fullPageName;
@@ -95,33 +110,67 @@ namespace AntDesign.Docs.Pages
             {
                 return;
             }
+
+            if (_currentPageName == fullPageName && _currentLocale == Locale)
+            {
+                return;
+            }
+
             if (fullPageName.Split("/").Length != 2)
             {
-                var menus = await DemoService.GetMenuAsync();
-                var current = menus.FirstOrDefault(x => x.Url == fullPageName.ToLowerInvariant());
-                if (current != null)
+                if (!onInitialize)
                 {
-                    NavigationManager.NavigateTo($"{CurrentLanguage}/{current.Children[0].Children[0].Url}");
+                    var menus = await DemoService.GetMenuAsync();
+                    var current = menus.FirstOrDefault(x => x.Url == fullPageName.ToLowerInvariant());
+                    var subPath = current.Children[0].Type == "menuItem" ? current.Children[0].Url : current.Children[0].Children[0].Url;
+                    if (current != null)
+                    {
+                        NavigationManager.NavigateTo($"{CurrentLanguage}/{subPath}");
+                    }
                 }
             }
             else
             {
-                await MainLayout.ChangePrevNextNav(Name);
+                _currentPageName = fullPageName;
+                _currentLocale = Locale;
                 _demoComponent = await DemoService.GetComponentAsync($"{fullPageName}");
-                _filePath = $"site/AntDesign.Docs/Demos/Components/{_demoComponent?.Title}/doc/index.{CurrentLanguage}.md";
-                _filePaths = new() { _filePath };
-                foreach (var item in _demoComponent.DemoList?.Where(x => !x.Debug && !x.Docs.HasValue) ?? Array.Empty<DemoItem>())
-                {
-                    _filePaths.Add($"site/AntDesign.Docs/Demos/Components/{_demoComponent?.Title}/demo/{item.Name}.md");
-                    _filePaths.Add($"site/AntDesign.Docs/{item.Type.Replace(".", "/")}.razor");
-                }
                 StateHasChanged();
+
+                _filePath = $"site/AntDesign.Docs/Demos/Components/{_demoComponent?.Title}/doc/index.{CurrentLanguage}.md";
+                await LoadDemos(_currentPageName);
+                await MainLayout.ChangePrevNextNav(Name);
+
+                if (NavigationManager.Uri.Contains("#"))
+                {
+                    NavigationManager.NavigateTo(NavigationManager.Uri);
+                }
+            }
+        }
+
+        private async Task LoadDemos(string pageName)
+        {
+            var showDemos = _demoComponent?.DemoList?.Where(x => !x.Debug && !x.Docs.HasValue).OrderBy(x => x.Order) ?? Enumerable.Empty<DemoItem>();
+            _anchors = showDemos.Select(x => (x.Name, x.Title)).ToArray();
+            _demos = [];
+            _filePaths = new() { _filePath };
+            foreach (var item in showDemos)
+            {
+                // compoennt is changed
+                if (pageName != _currentPageName)
+                {
+                    return;
+                }
+                _filePaths.Add($"site/AntDesign.Docs/Demos/Components/{_demoComponent?.Title}/demo/{item.Name}.md");
+                _filePaths.Add($"site/AntDesign.Docs/{item.Type.Replace(".", "/")}.razor");
+                _demos.Add(item);
+                StateHasChanged();
+                await Task.Delay(100);
             }
         }
 
         public void Dispose()
         {
-            LanguageService.LanguageChanged -= OnLanguageChanged;
+            LocalizationService.LanguageChanged -= OnLanguageChanged;
             NavigationManager.LocationChanged -= OnLocationChanged;
         }
     }

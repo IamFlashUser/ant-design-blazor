@@ -18,6 +18,7 @@ cover: https://gw.alipayobjects.com/zos/alicdn/ORmcdeaoO/Form.svg
 ### Form
 | 名称 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
+| Autocomplete | 默认情况下，浏览器是否可以自动完成输入元素的值 | string | on \| off | off |
 | Layout | 表单布局 | [FormLayout](https://github.com/ant-design-blazor/ant-design-blazor/blob/master/components/form/types/FormLayout.cs) | FormLayout.Horizontal |
 | LabelCol | label 标签布局，同 \<Col\> 组件，设置 span offset 值 | [ColLayoutParam](https://github.com/ant-design-blazor/ant-design-blazor/blob/master/components/form/ColLayoutParam.cs) | - |
 | LabelColSpan | 等同于LabelCol.Span | int | - |
@@ -26,13 +27,17 @@ cover: https://gw.alipayobjects.com/zos/alicdn/ORmcdeaoO/Form.svg
 | WrapperColSpan | 等同于WrapperCol.Span | int | - |
 | WrapperColOffset | 等同于WrapperCol.Offset | int | - |
 | Size | 设置字段组件的尺寸（仅限 antd 组件）|  small \| middle \| large | middle |
-| Name | 表单名称，会作为表单字段 id 前缀使用 | string | - |
+| Name | 表单名称，会作为表单字段 id 前缀使用。在静态渲染模式中，还作为 [EditForm](https://github.com/dotnet/aspnetcore/blob/main/src/Components/Web/src/Forms/EditForm.cs#L96) 的 `FromName` 属性，指定 Form Handler。 | string | - |
 | Model | 操作的泛型对象 | T | - |
+| Method | 提交表单的 Http 方法 | string | get |
 | Loading | 表单是否处于加载中 | bool | false |
+| Locale | 语言设置 | FormLocale | - |
 | OnFinish | 提交事件 | EventCallback\<EditContext\> | - |
 | OnFinishFailed | 提交失败(校验失败)回调事件 | EventCallback\<EditContext\> | - |
 | ValidateOnChange | 是否在更改时校验 | bool | false |
 | RequiredMark | 更改必填/可选字段标签在表单上的显示方式。 | FormRequiredMark | FormRequiredMark.Required |
+
+
 ### FormItem
 | 名称 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
@@ -54,40 +59,70 @@ cover: https://gw.alipayobjects.com/zos/alicdn/ORmcdeaoO/Form.svg
 | Help | 提示信息 | string | 根据校验规则自动生成 |
   
 ### Rules
+
 Rules 支持接收 FormValidationRule[] 进行配置
 
 | 名称 | 说明 | 类型 |
 | --- | --- | --- |
 | DefaultField | 仅在 `Type` 为 `Array` 类型时有效，用于指定数组元素的校验规则（FormItem暂不支持） | [FormValidationRule](zh-CN/components/form#Rules) |
-| OneOf | 值是否包含在指定的多个值中 | object\[] |
+| OneOf | 验证值是否包含在指定的多个值中的一个 | object\[] |
+| Enum | 与 OneOf 一样，验证值是否包含在指定枚举类型的多个枚举值中的一个 | Type |
 | Fields | 仅在 `Type` 为 `Array` 或 `Object` 类型时有效，用于指定子元素的校验规则（FormItem暂不支持） | Dictionary&lt;object, [FormValidationRule](zh-CN/components/form#Rules)> |
-| Len | String 类型时为字符串长度；Number 类型时为确定数字； Array 类型时为数组长度 | decimal |
-| Max | 必须设置 `Type`：String 类型为字符串最大长度；Number 类型时为最大值；Array 类型时为数组最大长度 | decimal |
-| Message | 错误信息，不设置时会通过ValidateMessages(查看下方)自动生成 | string |
-| Min | 必须设置 `Type`：String 类型为字符串最小长度；Number 类型时为最小值；Array 类型时为数组最小长度 | decimal |
+| Len | 绑定值类型是 string 时为字符串长度；数值类型时为确定数字； Array 类型时为数组长度 | decimal |
+| Max | 绑定值类型是 String 时为字符串最大长度；数值类型时为最大值；Array 类型时为数组最大长度 | decimal |
+| Message | 错误信息，不设置时会通过 ValidateMessages(查看下方)自动生成 | string |
+| Min | 绑定值类型是 String 时为字符串最小长度；数值类型类型时为最小值；Array 类型时为数组最小长度 | decimal |
 | Pattern | 正则表达式匹配 | string |
 | Required | 是否为必选字段 | bool |
 | Transform | 将字段值转换成目标值后进行校验 | Func&lt;object,object> |
-| Type | 类型，常见有 `String` \|`Number` \|`Boolean` \|`Url` \| `Email`。 | RuleFieldType |
+| Type | 验证值类型，常见有 `String` \|`Number` \|`Boolean` \|`Url` \| `Email`。 | RuleFieldType |
 | ValidateTrigger | TODO | string \| string\[] |
 | Validator | 自定义校验，接收 ValidationResult 作为返回值。[示例](zh-CN/components/form#components-form-demo-dynamic-rule)参考 | Func&lt;FormValidationContext,ValidationResult> |
 
 ### FormValidateErrorMessages
-(只支持在 Rules 验证模式下使用)
 
-Form 为验证提供了默认的错误提示信息（FormValidateErrorMessages类），你可以通过配置 `ValidateMessages` 属性，修改对应的提示模板。一种常见的使用方式，是配置国际化提示信息：
+对于 Form 组件多种验证设置，如 DataAnnotations、Rules、Requireed 属性，默认都会从组件库内置的全球化文件中获取错误提示模板。也支持以下方式自定义：
+
+1. 可通过 Form 的 Locale 属性修改该组件的全球化语言的默认值。
+2. 利用模型上 DataAnnotations 特性实现验证配置的，支持修改特性的 ErrorMessage 或 ErrorMessageResourceName 来自定义。
+3. 利用在 FormItem 设置 Rules 实现验证配置的，通过 FormValidationRule 中的 Message 属性来自定义。
+4. 通过 ConfigProvider 中的 Form 属性来给子组件传递错误提示模板。
+
+DataAnnotations 自定义消息模板示例：
 
 ```csharp
-var validateMessages = new FormValidateErrorMessages {
-  Required = "'{0}' 是必选字段",
-  // ...
-};
+public class Model
+{
+    [MaxLength(12,ErrorMessage ="最多只能输入12字符")]
+    [DisplayName("User Name")]
+    public string Username { get; set; }
 
-<Form ValidateMessages="validateMessages" />;
+    [Required(ErrorMessageResourceName = nameof(Resources.App.PasswordValidation), ErrorMessageResourceType = typeof(Resources.App))]
+    [Display(Name = nameof(Resources.App.Password), ResourceType = typeof(Resources.App))]
+    [MaxLength(16)]
+    public string Password { get; set; }
+}
 ```
 
-此外，[ConfigProvider](Demo TODO) 也提供了全局化配置方案，允许统一配置错误提示模板：
+修改 Locale 示例：
 
+```csharp
+@using AntDesign.Form.Locale
+
+<Form Locale="locale" />;
+
+@code
+{
+    FormLocale locale = LocaleProvider.CurrentLocale.Form;
+
+    protected override void OnInitialized()
+    {
+        locale.DefaultValidateMessages.Required = "❌ {0} is required.";
+    }
+}
+```
+
+设置 ConfigProvider 示例：
 ```csharp
 //in App.Razor
 var validateMessages = new FormValidateErrorMessages {
@@ -112,6 +147,34 @@ var formConfig = new FormConfig {
   </Router>
 </ConfigProvider>;
 ```
+
+### GenerateFormItem
+可通过 `TItem` 类型自动生成表单元素。当前支持string、DateTime、number、enum类型成员自动生成，支持嵌套类型自动生成。
+> **注意:** 此功能正在迭代中，后续本版可能会存在不兼容的变更。
+
+| 名称 | 说明                                                                | 类型                                        | 默认值 |
+| --- |-------------------------------------------------------------------|-------------------------------------------|--|
+| ValidateRules | 一个单参数范型委托，第一个参数是熟悉PropertyInfo，返回值为FormValidationRule[]?          | Func<PropertyInfo, FormValidationRule[]?> | null |
+| Definitions | 一个两参数范型委托，第一个参数是熟悉PropertyInfo，第二个参数是TItem, 返回值为RenderFragment    | Func<PropertyInfo, TItem, RenderFragment>? | null |
+| NotGenerate | 一个两参数范型委托，第一个参数是熟悉PropertyInfo，第二个参数是TItem, 返回值为bool，返回true则不自动生成 | Func<PropertyInfo, TItem, bool>?          | null |
+| SubformStyle | 嵌套表单风格，默认为Collapse风格，可选Block风格                                    | string                                    | Collapse |
+
+
+### 引用实例
+
+IForm
+
+| Name                                                        | Description                             | 
+| ----------------------------------------------------------- | --------------------------------------- | 
+| EditContext                                                 | 获取 Form 当前的 EditContext |
+| IsModified                                                  | 表单值是否被修改过 |
+| Model                                                       | Form 绑定的数据对象 |
+| Name                                                        | 表单名称 |
+| Reset()                                                     | 重置表单值和验证信息 |
+| SetValidationMessages(string field, string[] errorMessages) | 给指定的字段设置验证信息 | 
+| Submit()                                                    | 当验证通过会触发 OnFinish，验证不通过则触发 OnFinishFailed  |
+| Validate()                                                  | 验证所有字段                            |
+
 
 <style>
 .code-box-demo .ant-form:not(.ant-form-inline):not(.ant-form-vertical) {

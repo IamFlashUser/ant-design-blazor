@@ -1,3 +1,7 @@
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using System;
 using System.Text;
 using Microsoft.AspNetCore.Components;
@@ -300,7 +304,7 @@ namespace AntDesign.Internal
                 {
                     cls.Append($" {PrefixCls}-cell-range-start-single");
                 }
-                
+
                 if (startDate != endDate || currentDate > hoverDateTime)
                 {
                     cls.Append($" {PrefixCls}-cell-range-start");
@@ -341,7 +345,7 @@ namespace AntDesign.Internal
                 {
                     cls.Append($" {PrefixCls}-cell-range-end-single");
                 }
-                
+
                 if (startDate != endDate || currentDate < hoverDateTime)
                 {
                     cls.Append($" {PrefixCls}-cell-range-end");
@@ -426,33 +430,12 @@ namespace AntDesign.Internal
 
         private DateTime GetPreDate(DateTime dateTime)
         {
-            try
-            {
-                return Picker switch
-                {
-                    DatePickerType.Date => DateHelper.AddDaysSafely(dateTime, -1),
-                    DatePickerType.Year => DateHelper.AddYearsSafely(dateTime, -1),
-                    DatePickerType.Month => DateHelper.AddMonthsSafely(dateTime, -1),
-                    DatePickerType.Quarter => DateHelper.AddMonthsSafely(dateTime, -3),
-                    _ => dateTime,
-                };
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return dateTime; //reached min date, return requested
-            }
+            return DateHelper.GetPreviousStartDateOfPeriod(dateTime, Picker);
         }
 
         private DateTime GetNextDate(DateTime dateTime)
         {
-            return Picker switch
-            {
-                DatePickerType.Date => DateHelper.AddDaysSafely(dateTime, 1),
-                DatePickerType.Year => DateHelper.AddYearsSafely(dateTime, 1),
-                DatePickerType.Month => DateHelper.AddMonthsSafely(dateTime, 1),
-                DatePickerType.Quarter => DateHelper.AddMonthsSafely(dateTime, 3),
-                _ => dateTime,
-            };
+            return DateHelper.GetNextStartDateOfPeriod(dateTime, Picker);
         }
 
         private bool ShouldStopRenderDate(DateTime preDate, DateTime nextDate)

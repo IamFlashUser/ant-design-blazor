@@ -94,6 +94,16 @@
 		classList.Contains("testClass").Should().BeTrue();
 	}
 
+    [Fact]
+    public void Input_no_warpper_apply_class()
+    {
+        string? value = null;
+        string className = "test-class";
+        var cut = Render<AntDesign.Input<string>>(@<AntDesign.Input @bind-Value="@value" Class="@className" />);
+
+        cut.Find("input").ClassList.Contains(className).Should().BeTrue();
+    }
+
 	[Fact]
 	public void Input_show_clearButton_when_input_set()
 	{
@@ -133,6 +143,34 @@
 		isClearButtonHidden.Should().BeFalse();
         cut.Find("span.ant-input-clear-icon").GetAttribute("class")!.Contains("ant-input-clear-icon-hidden").Should().BeTrue();
 	}
+
+    [Fact]
+    public void Input_show_clearButton_when_show_clear_true()
+    {
+        //Arrange
+        var cut = Render<AntDesign.Input<string>>(
+            @<AntDesign.Input TValue="string" AllowClear ShowClear="true"/>);
+        // Not hidden even when empty
+        cut.Find("span.ant-input-clear-icon").GetAttribute("class")!.Contains("ant-input-clear-icon-hidden").Should().BeFalse();
+
+        cut.Find("input").Input("test");
+        // Not hidden after adding input
+        cut.Find("span.ant-input-clear-icon").GetAttribute("class")!.Contains("ant-input-clear-icon-hidden").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Input_hide_clearButton_when_show_clear_false()
+    {
+        //Arrange
+        var cut = Render<AntDesign.Input<string>>(
+            @<AntDesign.Input TValue="string" AllowClear ShowClear="false" />);
+        // Hidden when empty
+        cut.Find("span.ant-input-clear-icon").GetAttribute("class")!.Contains("ant-input-clear-icon-hidden").Should().BeTrue();
+
+        cut.Find("input").Input("test");
+        // Hidden even after adding input
+        cut.Find("span.ant-input-clear-icon").GetAttribute("class")!.Contains("ant-input-clear-icon-hidden").Should().BeTrue();
+    }
 
     [Fact]
     public void Input_default_change()
@@ -218,7 +256,6 @@
 
         cut.WaitForAssertion(() => cut.Find("input").Attributes.Single(x => x.Name.ToLowerInvariant() == "maxlength").Value.Should().Be("50"));
     }
-
 
     class TestModel
     {

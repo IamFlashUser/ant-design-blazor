@@ -1,11 +1,12 @@
 @using AntDesign.Select
-<Select Mode="multiple"
+<Select Mode="SelectMode.Multiple"
         DataSource="@_myColors"
         Disabled="@_disabled"
         Style="min-width:200px;"
         @bind-Values="@_selectedColorValues"
         ValueName="@nameof(MyColor.Value)"
-		LabelName="@nameof(MyColor.Name)">
+        LabelName="@nameof(MyColor.Name)"
+        ShowArrowIcon>
     <LabelTemplate>
         <LabelTemplateItem Context="item"
                            TItem="MyColor"

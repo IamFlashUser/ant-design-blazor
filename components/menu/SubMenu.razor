@@ -22,7 +22,7 @@
             </span>
             <i class="@(prefixCls)-arrow"></i>
         </div>
-        <ul direction="ltr" class="@SubMenuMapper.Class" role="menu" aria-expanded="@IsOpen">
+        <ul direction="ltr" class="@SubMenuMapper.Class" style="@_warpperStyle" @ref="@_warpperRef" role="menu" aria-expanded="@IsOpen">
             <CascadingValue Value="this" IsFixed="@true">
                 @ChildContent
             </CascadingValue>
@@ -48,7 +48,7 @@ else if (RootMenu.InlineCollapsed || RootMenu.InternalMode == MenuMode.Horizonta
                             OnOverlayHiding="OnOverlayHiding"
                             Trigger="new Trigger[] { RootMenu?.TriggerSubMenuAction ?? AntDesign.Trigger.Hover }"
                             OverlayClassName="@PopupClassName"
-                            PlacementCls="@($"{prefixCls}-popup {RootMenu.PrefixCls} {RootMenu.PrefixCls}-{RootMenu.Theme} {prefixCls}-placement-{_placement.Name}")">
+                            PlacementCls="@($"{prefixCls}-popup {RootMenu.PrefixCls} {RootMenu.PrefixCls}-{RootMenu.Theme.ToString().ToLower()} {prefixCls}-placement-{_placement.Name}")">
                 <ChildContent>
                     <div class="@(prefixCls)-title" role="button">
                         <span class="ant-menu-title-content">

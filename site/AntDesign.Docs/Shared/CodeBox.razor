@@ -1,6 +1,8 @@
 ﻿@using AntDesign.JsInterop
 @using AntDesign.Docs.Services
 @using System.Reflection;
+@using System.Globalization
+@implements IDisposable
 @inherits ComponentBase
 
 <div class="code-box" id="@DemoId">
@@ -9,13 +11,23 @@
         {
             if (Demo.Iframe > 0)
             {
-                <MockBrowser Height="@Demo.Iframe.Value" WithUrl="@($"/mock?demoId={DemoId}&type={Demo.Type}")" />
+                <MockBrowser Height="@Demo.Iframe.Value" WithUrl="@(Demo.Link??$"/mock?demoId={DemoId}&type={Demo.Type}")" />
             }
             else
             {
                 @if (_demoType != null)
                 {
-                    <DynamicComponent Type="_demoType" />
+                     <ErrorBoundary @ref="_errorBoundary">
+                        <ChildContent>
+                              <DynamicComponent Type="_demoType" />
+                        </ChildContent>
+                        <ErrorContent Context="ex">
+                            <Alert Type="AlertType.Error"
+                                   Message="@ex.Message"
+                                   Description="@ex.StackTrace">
+                            </Alert>
+                        </ErrorContent>
+                    </ErrorBoundary>
                 }
             }
         }
@@ -27,10 +39,10 @@
     <section class="code-box-meta markdown">
         <div class="code-box-title" @onclick="@AnchorClick">
             <a @onclick="AnchorClick">@Demo.Title</a>
-            <Tooltip Title="@lang.Resources["app.content.edit-demo"]">
+            <Tooltip Title="@Localizer["app.content.edit-demo"]">
                 <Unbound>
                     <a @ref="context.Current" class="edit-button" href="@EditUrl" target="_blank" rel="noopener noreferrer">
-                        <Icon Type="edit" />
+                        <Icon Type="@IconType.Outline.Edit" />
                     </a>
                 </Unbound>
             </Tooltip>
@@ -39,12 +51,12 @@
             @((MarkupString)Demo.Description)
         </div>
         <div class="code-box-actions">
-            <Tooltip Title="@lang.Resources[_copied?"app.demo.copied":"app.demo.copy"]" OnVisibleChange="() => _copied = false">
+            <Tooltip Title="@Localizer[_copied?"app.demo.copied":"app.demo.copy"]" OnVisibleChange="() => _copied = false">
                 <Unbound>
-                    <Icon RefBack="context" Type="@(_copied?"check" : "snippets")" Class="code-box-code-copy code-box-code-action" OnClick="Copy" />
+                    <Icon RefBack="context" Type="@(_copied ? IconType.Outline.Check : IconType.Outline.Snippets)" Class="code-box-code-copy code-box-code-action" OnClick="Copy" />
                 </Unbound>
             </Tooltip>
-            <Tooltip Title="@(CodeExpand?lang.Resources["app.demo.code.hide"] : lang.Resources["app.demo.code.show"])">
+            <Tooltip Title="@(CodeExpand?Localizer["app.demo.code.hide"] : Localizer["app.demo.code.show"])">
                 <Unbound>
                     <span @ref="context.Current" class="code-expand-icon code-box-code-action" @onclick="_ => CodeExpand = !CodeExpand">
                         <img alt="expand code" src="https://gw.alipayobjects.com/zos/rmsportal/wSAkBuJFbdxsosKKpqyq.svg" class="@(CodeExpand ? "code-expand-icon-hide" : "code-expand-icon-show")">
@@ -56,9 +68,14 @@
         </div>
     </section>
     <section class="highlight-wrapper @(CodeExpand?"highlight-wrapper-expand":"")">
-        <div class="highlight">
+      @*   <div class="highlight">
             <HighlightedCode Code="@Demo.Code" CanLoad="CodeExpand" Language="html"></HighlightedCode>
-        </div>
+        </div> *@
+        @if (CodeExpand || _codeViewRendered)
+        {
+            _codeViewRendered = true;
+            <CodeView @bind-Value="@Demo.Code" Compiled="OnCompiled" />
+        }
     </section>
     <style>
         @Demo.Style
@@ -67,7 +84,8 @@
 
 @inject InteropService InteropService
 @inject DemoService demoService;
-@inject ILanguageService lang;
+@inject ILocalizationService lang;
+@inject IStringLocalizer Localizer;
 
 @code {
 
@@ -86,6 +104,8 @@
 
     private bool _copied;
     private bool _rendered;
+    private bool _codeViewRendered;
+    private ErrorBoundary _errorBoundary;
 
     protected string DemoId => $"components-{ComponentName.ToLower()}-demo-{Demo.Name}";
 
@@ -94,11 +114,11 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-
+        lang.LanguageChanged += OnLangeChanged;
 #if DEBUG
         DebugIcon =
-    @<a href="mock?type=@(Demo.Type)" class="code-box-code-action" target="_blank">
-            <Icon Type="bug" />
+    @<a href="@(Demo.Link??$"mock?type={Demo.Type}")" class="code-box-code-action" target="_blank">
+            <Icon Type="@IconType.Outline.Bug" />
     </a>
     ;
 #endif
@@ -115,6 +135,11 @@
         await InteropService.JsInvokeAsync("window.eval", $"window.location.hash='{DemoId}'");
     }
 
+    void IDisposable.Dispose()
+    {
+        lang.LanguageChanged -= OnLangeChanged;
+    } 
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -130,5 +155,18 @@
             _demoType = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.{Demo.Type}");
             StateHasChanged();
         }
+    }
+
+    void OnCompiled(Type type)
+    {
+        _demoType = type;
+        _errorBoundary.Recover();
+        StateHasChanged();
+    }
+
+    private void OnLangeChanged(object sender, CultureInfo e)
+    {
+        _demoType = null;
+        StateHasChanged();
     }
 }
