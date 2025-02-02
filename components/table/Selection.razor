@@ -32,7 +32,7 @@ else if (IsColGroup)
 else if (IsHeader && HeaderColSpan != 0)
 {
 	<th class="@ClassMapper.Class ant-table-selection-column" style="@FixedStyle @HeaderStyle" @key="@Key" colspan="@HeaderColSpan">
-		@if (Type == "checkbox")
+		@if (Type == SelectionType.Checkbox)
 		{
 			<Checkbox Checked="Table.AllSelected" CheckedChange="OnCheckedChange" Indeterminate="Indeterminate" Disabled="IsHeaderDisabled" />
 		}
@@ -53,13 +53,15 @@ else if (!IsHeader && RowSpan != 0 && ColSpan != 0)
 		}
 		else
 		{
-			@if (Type == "checkbox")
+            HandleSelected();
+
+			@if (Type == SelectionType.Checkbox)
 			{
-				<Checkbox Checked="RowData.Selected" Disabled="Disabled" CheckedChange="OnCheckedChange" />
+				<Checkbox Checked="_selected.Value" Disabled="Disabled" CheckedChange="OnCheckedChange" />
 			}
-			else if (Type == "radio")
+			else if (Type == SelectionType.Radio)
 			{
-				<Radio Checked="RowData.Selected" Disabled="Disabled" CheckedChange="OnCheckedChange" TValue="bool" />
+                <Radio Checked="_selected.Value" Disabled="Disabled" CheckedChange="OnCheckedChange" TValue="bool" />
 			}
 		}
 	</td>

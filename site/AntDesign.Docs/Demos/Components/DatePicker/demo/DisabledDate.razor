@@ -1,10 +1,10 @@
 <DatePicker TValue="DateTime?" ShowTime="@true"
-               Format="yyyy-MM-dd HH:mm:ss"
+               Format="@("yyyy-MM-dd HH:mm:ss")"
                DisabledDate="date => date <= DateTime.Today"
                DisabledTime="date => GetDisabledTime(date)" 
                />
 <br />
-<DatePicker TValue="DateTime?" Picker="@DatePickerType.Month"
+<DatePicker TValue="DateTime?" Picker="DatePickerType.Month"
                DisabledDate="date => date <= DateTime.Now"
                 />
 <br />

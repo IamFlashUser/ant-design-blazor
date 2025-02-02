@@ -5,17 +5,17 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
+    <meta no-antblazor-css />
     <title>Ant Design Blazor</title>
     <meta name="author" content="Chris Mills">
     <meta name="description" content="🌈A set of enterprise-class UI components based on Ant Design and Blazor WebAssembly.">
     <base href="/" />
     <link rel="icon" href="logo.png" type="image/x-icon" />
     <link rel="preconnect" href="https://C9UTAZSOWW-dsn.algolia.net" crossorigin />
-    <link rel="stylesheet" href="https://unpkg.com/@docsearch/css@3.0.0/dist/style.css" crossorigin />
     <link href="_content/AntDesign.Docs/css/default.css?v={version}" rel="stylesheet" />
     <link href="manifest.json" rel="manifest" />
-    <link rel="stylesheet/less" type="text/css" href="_content/AntDesign.Docs/color.less" />
-    <link rel="stylesheet" type="text/css" href="./css/toast.css" />
+
+
 </head>
 
 <body>
@@ -32,7 +32,7 @@
                 }
 
                 #root {
-                    background-image: url("_content/AntDesign.Docs/home_bg.png");
+                    /* background-image: url("_content/AntDesign.Docs/home_bg.png"); */
                     background-repeat: no-repeat;
                     background-size: 100% auto;
                 }
@@ -100,31 +100,31 @@
                     animation: antSpinMove 1s infinite linear alternate;
                 }
 
-                    .ant-spin-dot-item:nth-child(1) {
-                        top: 0;
-                        left: 0;
-                    }
+                .ant-spin-dot-item:nth-child(1) {
+                    top: 0;
+                    left: 0;
+                }
 
-                    .ant-spin-dot-item:nth-child(2) {
-                        top: 0;
-                        right: 0;
-                        -webkit-animation-delay: 0.4s;
-                        animation-delay: 0.4s;
-                    }
+                .ant-spin-dot-item:nth-child(2) {
+                    top: 0;
+                    right: 0;
+                    -webkit-animation-delay: 0.4s;
+                    animation-delay: 0.4s;
+                }
 
-                    .ant-spin-dot-item:nth-child(3) {
-                        right: 0;
-                        bottom: 0;
-                        -webkit-animation-delay: 0.8s;
-                        animation-delay: 0.8s;
-                    }
+                .ant-spin-dot-item:nth-child(3) {
+                    right: 0;
+                    bottom: 0;
+                    -webkit-animation-delay: 0.8s;
+                    animation-delay: 0.8s;
+                }
 
-                    .ant-spin-dot-item:nth-child(4) {
-                        bottom: 0;
-                        left: 0;
-                        -webkit-animation-delay: 1.2s;
-                        animation-delay: 1.2s;
-                    }
+                .ant-spin-dot-item:nth-child(4) {
+                    bottom: 0;
+                    left: 0;
+                    -webkit-animation-delay: 1.2s;
+                    animation-delay: 1.2s;
+                }
 
                 .ant-spin-dot-spin {
                     -webkit-transform: rotate(45deg);
@@ -140,10 +140,10 @@
                     height: 32px;
                 }
 
-                    .ant-spin-lg .ant-spin-dot i {
-                        width: 14px;
-                        height: 14px;
-                    }
+                .ant-spin-lg .ant-spin-dot i {
+                    width: 14px;
+                    height: 14px;
+                }
 
                 @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
                     .ant-spin-blur {
@@ -232,20 +232,23 @@
                 }
             }
         }(window.location))
+
+        window.DocSearchInit = window.DocSearchInit || function () { };
     </script>
     <!-- End Single Page Apps for GitHub Pages -->
 
-    <script src="/_content/AntDesign.Charts/g2plot.js?v={version}"></script>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="/_content/AntDesign.Charts/g2plot.min.js?v={version}"></script>
     <script src="/_content/AntDesign.Charts/ant-design-charts-blazor.js?v={version}"></script>
-    <script src="/_content/AntDesign/js/ant-design-blazor.js?v={version}"></script>
     <script src="/_content/AntDesign.Docs/js/prism.js?v={version}"></script>
+
     <script>
-        window.AntDesign.Prism = {};
-        window.AntDesign.Prism.highlight = function (code, language) {
+        window.XPrism = {};
+        window.XPrism.highlight = function (code, language) {
             return Prism.highlight(code, Prism.languages[language], language);
         }
 
-        window.AntDesign.Prism.highlightAll = function () {
+        window.XPrism.highlightAll = function () {
             Prism.highlightAll();
         }
 
@@ -266,11 +269,14 @@
         //    });
     </script>
 
-    <script src="_framework/blazor.webassembly.js"></script>
+    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@docsearch/css@3" crossorigin />
+    <link rel="stylesheet/less" type="text/css" href="_content/AntDesign.Docs/color.less" />
+    <link rel="stylesheet" type="text/css" href="./css/toast.css" />
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/less.js/2.7.2/less.min.js" crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
-    <script src="https://unpkg.com/@docsearch/js@3.0.0/dist/umd/index.js" crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
+        referrerpolicy="no-referrer"></script>
+    <script src="https://fastly.jsdelivr.net/npm/@docsearch/js@3" crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
     <script src="_content/AntDesign.Docs/js/docsearch.js"></script>
     <script>
         let newWorker;
@@ -334,5 +340,41 @@
             });
         }
     </script>
+    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@petercatai/assistant/dist/umd/assistant.min.css" />
+    <script src="https://fastly.jsdelivr.net/npm/react/umd/react.development.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/react-dom/umd/react-dom.development.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/dayjs/dayjs.min.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/antd/dist/antd.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/lottie-web/build/player/lottie.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/@petercatai/assistant/dist/umd/assistant.min.js"></script>
+    <script>
+        PetercatLUI.initAssistant({
+            apiDomain: 'https://api.petercat.ai',
+            token: '9dda22fa-1d1a-4854-a53a-5abbc5584840',
+            bottom: 200,
+        });
+    </script>
+    <script>var require = { paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } }</script>
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.nls.js"></script>
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.js"></script>
+    <script>
+        var instances = {};
+        function createEditor(element, id, ref, options) {
+            console.log(id);
+            var instance = monaco.editor.create(element, options);
+            instance.onDidChangeModelContent(function () {
+                ref.invokeMethodAsync('OnChangeAsync', instance.getValue());
+            });
+            instances[id] = instance;
+            return instance;
+        }
+
+        function copy(id) {
+            var text = instances[id].getValue();
+            navigator.clipboard.writeText(text);
+        }
+    </script>
 </body>
+
 </html>

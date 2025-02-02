@@ -1,4 +1,8 @@
-﻿using System.Collections.Generic;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Collections.Generic;
 using AntDesign.JsInterop;
 using Bunit;
 using Microsoft.AspNetCore.Components;
@@ -47,10 +51,11 @@ namespace AntDesign.Tests.Form.Validation
                 .Add(x => x.ValidateMode, FormValidateMode.Rules)
                 .Add(x => x.Model, new { }));
 
-            wrappedSystemUnderTest
+            wrappedSystemUnderTest.WaitForAssertion(
+                () => wrappedSystemUnderTest
                 .FindComponent<FormItem>()
                 .Find("label")
-                .MarkupMatches(expectedMarkup);
+                .MarkupMatches(expectedMarkup));
         }
 
         public static IEnumerable<object[]> RequiredMarkTestData()
